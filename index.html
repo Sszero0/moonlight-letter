@@ -96,6 +96,13 @@
  .experience[data-scene="8"] .world{position:relative;inset:auto;order:2;flex:none;width:100%;height:360px;min-height:360px;margin:0 0 100px;opacity:1;filter:none}
 }
 @media(max-width:370px){.controls{left:0;right:0;padding-inline:16px}}
+
+/* The page counter itself opens the native picker on desktop and phones. */
+.chapter-count{position:relative;min-height:44px;padding:0 10px;border:1px solid #e7ca8b38;border-radius:9px;background:#e7ca8b08;cursor:pointer;flex-shrink:0}
+.chapter-count:hover,.chapter-count:focus-within{border-color:var(--gold);background:#e7ca8b14}
+.page-picker-hint{font:11px "Microsoft YaHei",sans-serif;white-space:nowrap;color:var(--gold);margin-left:4px}
+.chapter-count .chapter-select{display:block;position:absolute;inset:0;z-index:2;width:100%;height:100%;min-height:44px;opacity:0;cursor:pointer;font-size:16px;touch-action:manipulation}
+@media(max-width:700px){.chapter-count{gap:6px;padding-inline:9px}.page-picker-hint{font-size:10px;margin-left:2px}}
 </style>
   
 </head>
@@ -241,7 +248,9 @@
   </section>
 
   <footer class="controls" id="controls" hidden>
-    <div class="chapter-count"><span class="route-label">月光旅程</span><span id="current-count">01</span><span class="count-divider">/</span><span>09</span></div>
+    <label class="chapter-count" title="选择页面，直接跳转"><span class="route-label">月光旅程</span><span id="current-count">01</span><span class="count-divider">/</span><span>09</span><span class="page-picker-hint" aria-hidden="true">选页 ⌄</span>
+      <select class="chapter-select" id="chapter-select" aria-label="选择页面，直接跳转"><option value="1">01 · 相识</option><option value="2">02 · 你的最近</option><option value="3">03 · 一点甜</option><option value="4">04 · 中秋快乐</option><option value="5">05 · 今日天气</option><option value="6">06 · 小星座</option><option value="7">07 · 小纸条</option><option value="8">08 · 单独给你</option><option value="9">09 · 心里话</option></select>
+    </label>
     <nav class="chapter-dots" aria-label="贺卡章节">
       <button data-goto="1" aria-label="第一封：关于相识"><span></span></button>
       <button data-goto="2" aria-label="第二封：你的最近"><span></span></button>
@@ -253,7 +262,6 @@
       <button data-goto="8" aria-label="小太阳也可以被照顾"><span></span></button>
       <button data-goto="9" aria-label="最后的心里话"><span></span></button>
     </nav>
-    <select class="chapter-select" id="chapter-select" aria-label="跳到某一页"><option value="1">相识</option><option value="2">你的最近</option><option value="3">一点甜</option><option value="4">中秋快乐</option><option value="5">今日天气</option><option value="6">小星座</option><option value="7">小纸条</option><option value="8">单独给你</option><option value="9">心里话</option></select>
     <div class="play-controls"><button id="previous" aria-label="上一页">←</button><button id="pause" aria-label="开启自动漫游" aria-pressed="false"><span id="pause-label">自动漫游</span></button><button id="next" aria-label="继续下一幕">继续 <span aria-hidden="true">↗</span></button></div>
   </footer>
   <div class="cover-footer" id="cover-footer"><span>一轮明月 · 一份心意</span><span>送给今天的你，也送给以后的你。</span></div>
@@ -544,7 +552,7 @@
   $('start').addEventListener('click',begin);$('home').addEventListener('click',e=>{e.preventDefault();go(0);});
   $('replay').addEventListener('click',()=>{collected.clear();wishCount=0;$('wish-note').textContent='';go(0);});
   $('complete').addEventListener('click',finish);
-  $('chapter-select').addEventListener('change',e=>go(Number(e.target.value)));
+  $('chapter-select').addEventListener('change',e=>{auto=false;updateAuto();go(Number(e.target.value));});
   $('next').addEventListener('click',()=>go(scene+1));$('previous').addEventListener('click',()=>go(scene-1));
   document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>go(Number(b.dataset.goto))));
   $('pause').addEventListener('click',()=>{auto=!auto;sceneTime=0;updateAuto();});
