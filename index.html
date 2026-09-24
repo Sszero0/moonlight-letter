@@ -73,6 +73,14 @@
  .experience[data-scene="8"]{min-height:1000px}.extra-letter{inset:92px 25px 100px;width:auto}.extra-letter .letter-paper{padding:18px 0 15px 16px}.extra-letter h2{font-size:28px;margin:20px 0}.extra-letter .letter-body{font-size:14px;line-height:2}.extra-letter .letter-body p{margin-bottom:21px}.letter-afterword{font-size:12px}.experience[data-scene="8"] .world{top:580px;left:80px;right:-100px;bottom:50px}
 }
 @media(max-width:370px){.controls{left:16px;right:16px;gap:3px}.chapter-select{width:75px;font-size:11px}.play-controls #pause{min-width:52px}.play-controls #previous{min-width:34px}.play-controls #next{min-width:48px}.interlude{left:22px;right:22px}.interlude .mini-play{padding-inline:13px}.interlude .paper-play{padding:0}.star-picks button{font-size:12px}.weather-options button{font-size:12px}.paper-tabs button{padding:9px}.extra-letter .letter-body{font-size:13px}}
+
+/* Let the closing illustration stay crisp, with its own space on phones. */
+.experience[data-scene="9"] .world{opacity:1;filter:none}
+@media(max-width:700px){
+ .experience[data-scene="9"]{display:flex;flex-direction:column;height:auto;min-height:100svh}
+ .experience[data-scene="9"] .ending{position:relative;inset:auto;width:auto;margin:96px 25px 0}
+ .experience[data-scene="9"] .world{position:relative;inset:auto;order:2;flex:none;width:100%;height:360px;min-height:360px;margin:0 0 90px;opacity:1;filter:none}
+}
 </style>
   
 </head>
