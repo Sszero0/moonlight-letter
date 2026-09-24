@@ -81,6 +81,21 @@
  .experience[data-scene="9"] .ending{position:relative;inset:auto;width:auto;margin:96px 25px 0}
  .experience[data-scene="9"] .world{position:relative;inset:auto;order:2;flex:none;width:100%;height:360px;min-height:360px;margin:0 0 90px;opacity:1;filter:none}
 }
+
+/* Scrolling belongs to the page; only the small gift handle captures a drag. */
+.world canvas{touch-action:pan-y pinch-zoom}
+.touch-token{position:absolute;left:0;top:0;z-index:2;width:64px;height:64px;margin:-32px 0 0 -32px;padding:0;border-radius:50%;touch-action:none;cursor:grab}
+.touch-token:focus-visible{outline:2px solid var(--gold);outline-offset:0;background:#f4cd8618}
+.experience[data-scene="8"] .world{opacity:1;filter:none}
+@media(min-width:701px){.extra-letter{width:44%;left:7%}}
+@media(max-width:700px){
+ .controls{position:fixed;left:0;right:0;bottom:0;padding:8px 22px max(8px,env(safe-area-inset-bottom));background:#0b2333f5;backdrop-filter:blur(12px);z-index:20}
+ .controls button,.controls select{touch-action:manipulation}
+ .experience[data-scene="8"]{display:flex;flex-direction:column;height:auto;min-height:100svh}
+ .experience[data-scene="8"] .extra-letter{position:relative;inset:auto;width:auto;margin:92px 25px 0}
+ .experience[data-scene="8"] .world{position:relative;inset:auto;order:2;flex:none;width:100%;height:360px;min-height:360px;margin:0 0 100px;opacity:1;filter:none}
+}
+@media(max-width:370px){.controls{left:0;right:0;padding-inline:16px}}
 </style>
   
 </head>
@@ -89,6 +104,7 @@
   <div class="sky-wash" aria-hidden="true"></div>
   <div class="world" id="world">
     <canvas id="moonworld" aria-label="会回应触碰的月亮小世界。也可以使用下方按钮完成互动。" role="img"></canvas>
+    <button id="touch-token" class="touch-token" aria-label="拿起星光，再点她的窗" hidden></button>
     <div class="world-heading"><span class="world-coordinate">MOON / 08.15</span><span id="world-title">一颗月亮，装着一些想说的话</span></div>
     <div class="interaction" id="interaction">
       <span class="interaction-symbol" aria-hidden="true">✧</span>
@@ -250,6 +266,7 @@
   const $ = id => document.getElementById(id);
   const canvas = $('moonworld'), ctx = canvas.getContext('2d'), sprite = $('friends');
   const audio = $('bgm'), root = $('experience'), chapters = [...document.querySelectorAll('.chapter')];
+  const touchToken = $('touch-token');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TAU = Math.PI * 2, clamp = (v,a=0,b=1) => Math.max(a,Math.min(b,v));
   const lerp = (a,b,t) => a+(b-a)*t, ease = t => 1-Math.pow(1-clamp(t),3);
@@ -464,6 +481,9 @@
     ctx.translate(0,(1-ease(transition))*18);ctx.globalAlpha=ease(transition);
     if(scene===0)drawCover(cx,cy,r,t);else if(scene===1)drawEncounter(cx,cy,r,t);else if(scene===2)drawStudy(cx,cy,r,t);else if(scene===3)drawSweet(cx,cy,r,t);else if(scene>=5&&scene<=7)drawInterlude(cx,cy,r,t);else drawFinale(cx,cy,r,t);
     ctx.restore();
+    const tokenAvailable=scene>0&&scene<4&&!collected.has(scene)&&geometry.a;
+    touchToken.hidden=!tokenAvailable;
+    if(tokenAvailable)touchToken.style.transform=`translate(${geometry.a.x}px,${geometry.a.y+(1-ease(transition))*18}px)`;
     for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=13*dt;p.life-=dt*.55;if(p.life<=0){particles.splice(i,1);continue;}star(p.x,p.y,p.r,p.life);}
     for(let i=ripples.length-1;i>=0;i--){const p=ripples[i],age=time-p.born;if(age>1.4){ripples.splice(i,1);continue;}ellipse(p.x,p.y,6+age*37,6+age*37,`rgba(255,223,165,${(1-age/1.4)*.6})`,1);}
     for(let i=lanterns.length-1;i>=0;i--){const p=lanterns[i],age=time-p.born;if(age>5){lanterns.splice(i,1);continue;}if(age<0)continue;const x=p.x+Math.sin(age*1.7)*16,y=p.y-age*33;ctx.save();ctx.globalAlpha=Math.min(1,(5-age)*.5);if(p.cake)mooncake(x,y,9,age*.6);else{glow(x,y,30,.24);roundRect(x-7,y-10,14,20,4,'#f4d294','#fff2c4');line(x-4,y+10,x+1,y+17,'#edc487',1);star(x,y,3);}ctx.restore();}
@@ -473,6 +493,7 @@
     $('world-title').textContent=titles[scene];$('interaction-hint').textContent=collected.has(scene)?completedHints[scene]:hints[scene];
     if(selectedToken&&!collected.has(scene)&&scene>0&&scene<4)$('interaction-hint').textContent=['','星光拿好啦，再点她的窗口','星星拿好啦，再点台灯','月饼拿好啦，再点她身边'][scene];
     $('complete').hidden=scene<1||scene>3||collected.has(scene);$('complete').textContent=completeLabels[scene];$('keepsakes').hidden=scene===0||scene>=5;
+    touchToken.setAttribute('aria-label',['','拿起星光，再点她的窗','拿起星星，再点台灯','拿起月饼，再点她'][scene]||'互动小礼物');
     document.querySelectorAll('[data-keepsake]').forEach(e=>e.classList.toggle('lit',collected.has(Number(e.dataset.keepsake))));
   }
   function finish(){
@@ -562,10 +583,15 @@
   audio.addEventListener('ended',()=>{if(music){audio.currentTime=0;playMusic();}});
   document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden)audio.pause();else if(music)playMusic();});
   function pointer(e){const rect=canvas.getBoundingClientRect();return{x:e.clientX-rect.left,y:e.clientY-rect.top};}
-  canvas.addEventListener('pointerdown',e=>{
-    const p=pointer(e);pointerStart=p;px=p.x;py=p.y;dragX=px;dragY=py;dragging=true;canvas.setPointerCapture(e.pointerId);
+  function startPointer(e){
+    if(!e.isPrimary)return;
+    const p=pointer(e);pointerStart=p;px=p.x;py=p.y;dragX=px;dragY=py;dragging=true;
+    try{canvas.setPointerCapture(e.pointerId);}catch{}
     if(scene>0&&scene<4&&!collected.has(scene)&&geometry.a){activeDrag=Math.hypot(px-geometry.a.x,py-geometry.a.y)<Math.max(36,geometry.hit);}
-  });
+  }
+  canvas.addEventListener('pointerdown',startPointer);
+  touchToken.addEventListener('pointerdown',startPointer);
+  touchToken.addEventListener('click',e=>{if(e.detail===0&&scene>0&&scene<4&&!collected.has(scene)){selectedToken=true;updateHints();}});
   canvas.addEventListener('pointermove',e=>{
     const p=pointer(e);mx=(p.x/W-.5)*2;my=(p.y/H-.5)*2;
     if(!dragging)return;
@@ -589,7 +615,8 @@
     pointerStart=null;
     activeDrag=false;dragging=false;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
   }
-  canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',()=>{activeDrag=false;dragging=false;});canvas.addEventListener('pointerleave',()=>{if(!dragging){mx=0;my=0;}});
+  canvas.addEventListener('pointerup',release);touchToken.addEventListener('pointerup',release);
+  canvas.addEventListener('pointercancel',()=>{activeDrag=false;dragging=false;pointerStart=null;});canvas.addEventListener('pointerleave',()=>{if(!dragging){mx=0;my=0;}});
   function frame(now){
     requestAnimationFrame(frame);if(document.hidden){last=0;return;}if(!last)last=now;const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;sceneTime+=dt;transition=Math.min(1,transition+dt*1.35);
     if(!dragging&&!reduced){rotation+=dt*.035+spin;spin*=Math.pow(.08,dt);}
