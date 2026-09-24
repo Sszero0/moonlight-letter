@@ -103,6 +103,8 @@
 .page-picker-hint{font:11px "Microsoft YaHei",sans-serif;white-space:nowrap;color:var(--gold);margin-left:4px}
 .chapter-count .chapter-select{display:block;position:absolute;inset:0;z-index:2;width:100%;height:100%;min-height:44px;opacity:0;cursor:pointer;font-size:16px;touch-action:manipulation}
 @media(max-width:700px){.chapter-count{gap:6px;padding-inline:9px}.page-picker-hint{font-size:10px;margin-left:2px}}
+.leo-sign{font-family:"Segoe UI Symbol",serif;color:var(--gold)}
+.heart-touch-hint{font-size:11px;color:#b8c6cb}
 </style>
   
 </head>
@@ -198,7 +200,7 @@
     <div class="copy"><p class="eyebrow reveal">几件小事，我记着呢</p>
       <h2 class="reveal" id="title-6">把关于你的，<br>连成<span class="gold">一小片星空。</span></h2>
       <div class="body-copy reveal"><p>我们还没有很长很长的故事。<br>但你说过的这些小事，<br>我有放在心上。</p></div>
-      <p class="margin-note reveal">点亮四颗星，看看里面藏着什么。</p></div>
+      <p class="margin-note reveal">狮子座的小太阳，点亮四颗星，<br>看看这片星空里藏着什么。</p></div>
     <div class="mini-play memory-play">
       <div class="play-heading"><span class="play-kicker">关于你的小星座</span><span id="memory-count">0 / 4</span></div>
       <div class="star-picks" role="group" aria-label="点亮关于她的四颗星">
@@ -208,7 +210,7 @@
         <button data-memory="3" aria-pressed="false"><span aria-hidden="true">✧</span> 我的小心思</button>
       </div>
       <div class="response-note" id="memory-note" aria-live="polite"><strong>每颗星里，都有一点关于你。</strong><p>不必按顺序，先点喜欢的那一颗。</p></div>
-      <p class="constellation-done" id="constellation-done" hidden>星星连起来了。关于你的故事，我还想慢慢听。</p>
+      <p class="constellation-done" id="constellation-done" hidden>原来，关于你的这些小事，连起来是一颗心。<br><span class="leo-sign" aria-hidden="true">♌︎</span> 狮子座的小太阳，这片星光是你的。<br><span class="heart-touch-hint">再点点画面里的星星，重温这些小事。</span></p>
     </div>
   </section>
 
@@ -286,6 +288,8 @@
   let hotspots=[], selectedToken=false, pointerStart=null, bridgeAge=0, ripples=[], floatNotes=[], lanterns=[], reactions={};
   const collected = new Set();
   const remembered = new Set();
+  const memoryLitAt = [-100,-100,-100,-100];
+  let heartCompleteAt=-100, heartPulseAt=-100;
   let weather='none', weatherAt=0, paperTheme='music', paperIndex=0, savedPaper=null, interludeArtHeight=0;
   const titles=['一颗月亮，装着一些想说的话','从屏幕两端，到同一片星空','把一束光，送到你的书桌','今晚的月亮，有一点甜','今晚，月亮也来见小太阳','小太阳，也有自己的天气','关于你的小事，正在发光','一张小纸条，留给下次','今晚的月光，也照顾你','以后的话，可以慢慢聊'];
   const hints=['转转月亮，点点小太阳和兔兔','拖动星光，或先点星光、再点她的窗','拖动星星，或先点星星、再点台灯','拖动月饼，或先点月饼、再点她','轻点星空，放飞一盏祝福灯','选一种天气，月亮会回应你','四颗星里，藏了四件小事','小纸条可以慢慢拆','',''];
@@ -359,6 +363,8 @@
     ctx.restore();const mid=point(.5);hotspots.push({type:'bridge',x:mid.x,y:mid.y,rx:Math.max(36,Math.abs(b.x-a.x)*.48),ry:Math.max(27,r*.25)});
   }
   function react(type,x,y){
+    if(type.startsWith('memory-')){lightMemory(Number(type.slice(7)),x,y);return;}
+    if(type==='leo-heart'){heartPulseAt=time;burst(x,y,32);floatNotes.push({x,y,text:'狮子座的小太阳，这颗心送给你。',born:time});return;}
     reactions[type]=time;ripples.push({x,y,born:time});burst(x,y,22);
     const notes={sun:'小太阳，今天也要开心',friend0:'开题顺利，天天开心。',friend1:'很高兴认识你',friend2:'月饼分你，快乐也分你',bridge:'把这份心意，送到你那边',lamp:'愿你准备的，都顺顺利利'};
     if(notes[type]){floatNotes.push({x,y,text:notes[type],born:time});$('announcement').textContent=notes[type];}
@@ -460,6 +466,7 @@
     const available=interludeArtHeight||H*.48;
     const size=mobile?Math.min(r*1.1,H*.33):Math.min(r*.64,H*.21,Math.max(24,(available-48)/2.5));
     const y=mobile?H*.46:24+size*1.28;
+    if(scene===6){drawMemoryHeart(cx,y,size,t);return;}
     const rest=weather==='rest'&&scene===5, warmth=weather==='sunny'&&scene===5;
     moon(cx,y,size,rotation,rest?.50:.79);orbit(cx,y,size*1.15,t);
     drawSprite(0,cx+size*.25,y+size*.89,size*1.1,Math.sin(t*.6)*.018);
@@ -470,11 +477,6 @@
       if(warmth)glow(cx,y,size*2.3,.19*progress);
       if(weather==='cloudy'){for(let i=0;i<4;i++)ellipse(cx+(i-1.5)*size*.5,y-size*.8,7,7,'#d9e4dd66',1);}
       if(rest){label('今天的光，月亮替你亮一会儿',cx,y+size*1.43,.9,mobile?11:13);}
-    }
-    if(scene===6){
-      const points=[[-1.35,-.35],[-.62,-1.22],[.62,-1.1],[1.35,-.28]];
-      for(let i=0;i<4;i++){const [sx,sy]=points[i],x=cx+sx*size,y1=y+sy*size;if(remembered.has(i)){glow(x,y1,22,.35);star(x,y1,7);if(i>0&&remembered.has(i-1))line(cx+points[i-1][0]*size,y+points[i-1][1]*size,x,y1,'#f3d89b99',1.5);}else star(x,y1,4,.35);}
-      if(remembered.size===4)ellipse(cx,y-size*.5,size*1.7,size*.9,'#e8c99833',1,t*.05);
     }
     if(scene===7){drawSprite(1,cx-size*.75,y+size*.9,size*.89,Math.sin(t*.7)*.02);star(cx,y-size*1.15,7+Math.sin(t)*1.5);}
   }
@@ -514,6 +516,41 @@
     if(scene>=5&&scene<=7){
       const panel=chapters[scene].querySelector('.mini-play');
       interludeArtHeight=panel.getBoundingClientRect().top-canvas.getBoundingClientRect().top;
+    }
+  }
+  function drawMemoryHeart(cx,cy,s,t){
+    const complete=remembered.size===4, reveal=reduced?1:ease((time-heartCompleteAt)/1.5);
+    const beat=complete&&!reduced?1+Math.sin(t*1.7)*.012+Math.sin(clamp((time-heartPulseAt)/1.3)*Math.PI)*.06:1;
+    const curves=[
+      [[0,-.45],[.45,-1.15],[1.22,-1],[1.22,-.34]],
+      [[1.22,-.34],[1.22,.20],[.50,.70],[0,1.05]],
+      [[0,1.05],[-.50,.70],[-1.22,.20],[-1.22,-.34]],
+      [[-1.22,-.34],[-1.22,-1],[-.45,-1.15],[0,-.45]]
+    ];
+    const point=(segment,p)=>{const [a,b,c,d]=curves[segment],u=1-p;return{x:cx+s*beat*(u*u*u*a[0]+3*u*u*p*b[0]+3*u*p*p*c[0]+p*p*p*d[0]),y:cy+s*beat*(u*u*u*a[1]+3*u*u*p*b[1]+3*u*p*p*c[1]+p*p*p*d[1])};};
+    moon(cx,cy+s*.08,s*.70,rotation,.60);
+    // A Leo zodiac emblem, not a literal astronomical star map.
+    ctx.save();ctx.font=`${s*.48}px "Segoe UI Symbol",serif`;ctx.textAlign='center';ctx.fillStyle=complete?'#ffe3a6':'#c6b992';ctx.shadowColor='#f9c97d';ctx.shadowBlur=complete?12:0;ctx.fillText('♌',cx-s*.43,cy+s*.10);ctx.restore();
+    drawSprite(0,cx+s*.23,cy+s*.77,s*.93,Math.sin(t*.6)*.018);
+    drawSprite(2,cx-s*.48,cy+s*.65,s*.31);
+    label('狮子座 · 小太阳',cx,cy-s*1.10,1,innerWidth<=700?12:14);
+    if(complete)glow(cx,cy,s*1.55,.10*reveal);
+    for(let i=0;i<4;i++){
+      const lit=remembered.has(i),progress=lit?(reduced?1:ease((time-memoryLitAt[i])/1.1)):0;
+      ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.beginPath();for(let k=0;k<=40;k++){const p=point(i,k/40);k?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}
+      ctx.strokeStyle='#efd6a329';ctx.lineWidth=1;ctx.setLineDash([2,6]);ctx.stroke();ctx.setLineDash([]);
+      if(lit){ctx.beginPath();for(let k=0;k<=40*progress;k++){const p=point(i,k/40);k?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}ctx.strokeStyle=complete?'#ffe5b0':'#eccc91';ctx.lineWidth=complete?2:1.6;ctx.shadowColor='#f3be76';ctx.shadowBlur=complete?13:7;ctx.stroke();}
+      ctx.restore();
+      for(let k=1;k<7;k++){const p=point(i,k/7);if(k/7<=progress)star(p.x,p.y,k%2?1.8:2.5,.68+.2*Math.sin(t*1.4+k+i));}
+      const p=point(i,0);glow(p.x,p.y,lit?24:15,lit?.34:.11);star(p.x,p.y,lit?7:5,lit?1:.62);
+      hotspots.push({type:'memory-'+i,x:p.x,y:p.y,rx:22,ry:22});
+    }
+    if(complete){
+      const p=point(Math.floor((t*.12)%4), (t*.12)%1);if(!reduced){glow(p.x,p.y,15,.4);star(p.x,p.y,4);}
+      label('关于你的点点滴滴，都放在心上。',cx,cy+s*1.36,reveal,innerWidth<=700?10:12);
+      // Register behind star handles so repeated touches still open their notes.
+      hotspots.unshift({type:'leo-heart',x:cx,y:cy,rx:s*.78,ry:s*.74});
     }
   }
   function fitMobileChapter(){
@@ -578,7 +615,14 @@
   const weatherNotes={sunny:['那就把这份开心，再放大一点。','今天遇见什么好事了？有机会的话，我也想听你讲讲。'],cloudy:['多云也没关系，先坐一会儿。','不用急着把心情整理好。想吐槽就说两句，不想说的时候，也可以先听首喜欢的歌。'],rest:['收到，小太阳今天提前下班。','剩下的光，交给月亮。今晚先照顾好自己，开题和那些没想通的事，歇一歇再说。']};
   document.querySelectorAll('[data-weather]').forEach(button=>button.addEventListener('click',()=>{weather=button.dataset.weather;weatherAt=time;document.querySelectorAll('[data-weather]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));showNote('weather-note',...weatherNotes[weather]);burst(W*.5,H*.2,26);}));
   const memoryNotes=[['小太阳，是你。','这个我们一起起的小昵称，我很喜欢。做这封信的时候，也总想着给它找个合适的位置。'],['你最近在忙开题。','专业的部分我还不懂，但你说过的烦恼和进展，我想认真听。也希望你忙完时，能好好松口气。'],['林俊杰，还有邓紫棋。','知道你喜欢听他们的歌，就又多了一件想了解你的事：哪一首，是你会单曲循环的？'],['这份中秋祝福，主角是你。','昵称、兔子灯，还有这几颗星，都是想让你打开时觉得：嗯，这封信是写给我的。']];
-  document.querySelectorAll('[data-memory]').forEach(button=>button.addEventListener('click',()=>{const id=Number(button.dataset.memory);remembered.add(id);button.setAttribute('aria-pressed','true');button.querySelector('span').textContent='✦';$('memory-count').textContent=remembered.size+' / 4';showNote('memory-note',...memoryNotes[id]);$('constellation-done').hidden=remembered.size!==4;burst(W*.5,H*.2,24);}));
+  function lightMemory(id,x=W*.5,y=H*.2){
+    const fresh=!remembered.has(id);if(fresh)memoryLitAt[id]=time;
+    remembered.add(id);const button=document.querySelector(`[data-memory="${id}"]`);button.setAttribute('aria-pressed','true');button.querySelector('span').textContent='✦';
+    $('memory-count').textContent=remembered.size+' / 4';showNote('memory-note',...memoryNotes[id]);$('constellation-done').hidden=remembered.size!==4;
+    if(fresh&&remembered.size===4){heartCompleteAt=time;heartPulseAt=time;$('announcement').textContent='四颗星都亮了，连成一颗送给狮子座小太阳的心。';}
+    burst(x,y,fresh?24:10);
+  }
+  document.querySelectorAll('[data-memory]').forEach(button=>button.addEventListener('click',()=>lightMemory(Number(button.dataset.memory))));
   const paperQuestions={music:['如果给今天的你选一首背景音乐，会是哪首？','林俊杰和邓紫棋各选一首，你会用哪两首给我安利？','有没有一首歌，前奏一响，你就忍不住想跟着唱？'],sweet:['月饼只能留一种馅，你会坚定地站哪一边？','假如月亮开了家甜品店，小太阳会点什么？','今天有什么小事，让你偷偷开心了一下？'],after:['开题顺利结束后，你最想用什么犒劳自己？','如果突然多出半天不用忙的时间，你想怎么过？','等不忙了，有没有一件小事，是你一直想做的？']};
   try{const value=JSON.parse(localStorage.getItem('moonletter-paper-v1'));if(value&&paperQuestions[value.theme]?.[value.index])savedPaper=value;}catch{}
   function renderPaper(){const text=paperQuestions[paperTheme][paperIndex];$('paper-question').textContent=text;$('paper-number').textContent=String(paperIndex+1).padStart(2,'0')+' / 03';document.querySelectorAll('[data-paper]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.paper===paperTheme)));const kept=savedPaper?.theme===paperTheme&&savedPaper.index===paperIndex;$('keep-paper').setAttribute('aria-pressed',String(kept));$('keep-paper').textContent=kept?'这张已经留好啦':'把这张留到下次';$('recall-paper').hidden=!savedPaper;if(!reduced)$('question-paper').animate([{opacity:.25,transform:'translateY(8px) rotate(-1deg)'},{opacity:1,transform:'none'}],{duration:420,easing:'ease-out'});}
